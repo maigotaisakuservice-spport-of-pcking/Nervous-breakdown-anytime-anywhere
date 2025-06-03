@@ -2,161 +2,153 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>神経衰弱ゲーム</title>
+  <title>神経衰弱ゲーム！！！ Bot対戦機能付き！！！</title>
   <style>
     body {
       font-family: sans-serif;
-      text-align: center;
       background: #f0f0f0;
+      text-align: center;
       margin: 0;
       padding: 20px;
     }
     h1 {
       margin-bottom: 10px;
     }
-    select, input[type="number"], button {
+    select, input[type="number"], button, label {
       font-size: 16px;
       margin: 5px;
-      padding: 5px 10px;
+      padding: 5px;
     }
     #gameBoard {
       display: grid;
       gap: 10px;
       justify-content: center;
       margin-top: 20px;
-      perspective: 1000px;
     }
     .card {
       width: 80px;
       height: 100px;
-      position: relative;
-      transform-style: preserve-3d;
-      transition: transform 0.5s;
-      cursor: pointer;
-    }
-    .cardInner {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
+      background: #4caf50;
+      color: white;
+      font-size: 32px;
       display: flex;
       justify-content: center;
       align-items: center;
+      cursor: pointer;
       border-radius: 8px;
-      font-size: 32px;
+      user-select: none;
+      transition: transform 0.3s ease;
     }
-    .front {
-      background: #4caf50;
-      color: white;
-    }
-    .back {
-      background: #fff;
-      color: #333;
-      transform: rotateY(180deg);
-      border: 2px solid #4caf50;
+    .card:hover {
+      transform: scale(1.05);
     }
     .flipped {
-      transform: rotateY(180deg);
+      background: #fff;
+      color: #333;
       cursor: default;
+      transform: rotateY(180deg);
     }
-    #status {
+    #status, #scoreBoard {
       margin-top: 20px;
       font-size: 18px;
     }
-    #highScore {
-      margin-top: 10px;
-      color: #555;
+    #controls {
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>神経衰弱ゲーム</h1>
+  <h1>神経衰弱ゲーム！！！ Bot対戦機能付き！！！</h1>
 
-  <label>カード枚数（偶数）:
-    <select id="cardCountSelect">
-      <option value="8">8枚</option>
-      <option value="16">16枚</option>
-      <option value="24">24枚</option>
-      <option value="32">32枚</option>
-      <option value="40">40枚</option>
-      <option value="60">60枚</option>
-    </select>
-  </label>
-  <label>カスタム:
-    <input type="number" id="customCount" min="2" max="60" step="2" placeholder="偶数(最大60)" />
-  </label>
-  <button onclick="startGame()">ゲーム開始</button>
+  <div id="controls">
+    <label>カード枚数:
+      <select id="cardCountSelect">
+        <option value="8">8枚</option>
+        <option value="16">16枚</option>
+        <option value="24">24枚</option>
+        <option value="32">32枚</option>
+      </select>
+    </label>
+    <label>カスタム: <input type="number" id="customCount" min="2" max="60" step="2" placeholder="偶数(最大60)" /></label>
+    <label>
+      ボット対戦 <input type="checkbox" id="botToggle" onchange="toggleBotOptions()" />
+    </label>
+    <label id="botLevelBox" style="display:none;">
+      ボット難易度:
+      <select id="botDifficulty">
+        <option value="easy">簡単</option>
+        <option value="normal" selected>普通</option>
+        <option value="hard">難しい</option>
+      </select>
+    </label>
+    <button onclick="startGame()">ゲーム開始</button>
+  </div>
 
   <div id="gameBoard"></div>
-  <div id="status"></div>
-  <div id="highScore"></div>
+  <div id="status">準備中...</div>
+  <div id="scoreBoard">ハイスコア: <span id="highScore">-</span>回</div>
 
   <script>
-    let firstCard = null;
-    let secondCard = null;
-    let lockBoard = false;
-    let matchCount = 0;
-    let totalPairs = 0;
-    let flipCount = 0;
-    let currentCardCount = 0;
+    let firstCard = null, secondCard = null, lockBoard = false;
+    let matchCount = 0, totalPairs = 0, flipCount = 0;
+    let memory = {};
+    let isBotTurn = false, botEnabled = false, botLevel = "normal";
+
+    function toggleBotOptions() {
+      const enabled = document.getElementById("botToggle").checked;
+      document.getElementById("botLevelBox").style.display = enabled ? "inline" : "none";
+    }
 
     function startGame() {
       const select = document.getElementById("cardCountSelect");
       const custom = document.getElementById("customCount").value;
-      const count = parseInt(custom) || parseInt(select.value);
+      let cardCount = parseInt(custom) || parseInt(select.value);
 
-      if (count % 2 !== 0 || count < 2 || count > 60) {
+      if (cardCount % 2 !== 0 || cardCount < 2 || cardCount > 60) {
         alert("2〜60までの偶数を入力してください");
         return;
       }
 
-      currentCardCount = count;
+      botEnabled = document.getElementById("botToggle").checked;
+      botLevel = document.getElementById("botDifficulty").value;
+
       const board = document.getElementById("gameBoard");
       board.innerHTML = "";
       firstCard = secondCard = null;
       lockBoard = false;
       matchCount = 0;
       flipCount = 0;
-      totalPairs = count / 2;
+      memory = {};
+      totalPairs = cardCount / 2;
+      isBotTurn = false;
 
-      const columns = Math.min(10, Math.ceil(Math.sqrt(count)));
+      const columns = Math.min(10, Math.ceil(Math.sqrt(cardCount)));
       board.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
 
       const values = [];
-      for (let i = 1; i <= totalPairs; i++) {
-        values.push(i, i);
-      }
+      for (let i = 1; i <= totalPairs; i++) values.push(i, i);
       values.sort(() => 0.5 - Math.random());
 
-      values.forEach(num => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "card";
-        wrapper.dataset.value = num;
-
-        const front = document.createElement("div");
-        front.className = "cardInner front";
-        front.textContent = "?";
-
-        const back = document.createElement("div");
-        back.className = "cardInner back";
-        back.textContent = num;
-
-        wrapper.appendChild(front);
-        wrapper.appendChild(back);
-
-        wrapper.addEventListener("click", () => flipCard(wrapper));
-        board.appendChild(wrapper);
+      values.forEach((val, index) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.dataset.value = val;
+        card.dataset.index = index;
+        card.textContent = "?";
+        card.addEventListener("click", flipCard);
+        board.appendChild(card);
       });
 
-      document.getElementById("status").textContent = "ゲーム開始！";
+      document.getElementById("status").textContent = "あなたの番です";
       updateHighScore();
     }
 
-    function flipCard(card) {
-      if (lockBoard || card.classList.contains("flipped")) return;
+    function flipCard(e) {
+      if (lockBoard || isBotTurn) return;
+      const card = e.currentTarget;
+      if (card.classList.contains("flipped")) return;
 
-      card.classList.add("flipped");
-
+      revealCard(card);
       if (!firstCard) {
         firstCard = card;
         return;
@@ -168,43 +160,96 @@
 
       if (firstCard.dataset.value === secondCard.dataset.value) {
         matchCount++;
-        resetFlips();
-        if (matchCount === totalPairs) {
-          document.getElementById("status").textContent = `🎉 クリア！試行回数：${flipCount}`;
-          updateHighScore();
-        }
+        lockBoard = false;
+        firstCard = secondCard = null;
+        if (matchCount === totalPairs) endGame();
+        if (botEnabled) nextBotTurn();
       } else {
         setTimeout(() => {
-          firstCard.classList.remove("flipped");
-          secondCard.classList.remove("flipped");
-          resetFlips();
+          hideCard(firstCard);
+          hideCard(secondCard);
+          firstCard = secondCard = null;
+          lockBoard = false;
+          if (botEnabled) nextBotTurn();
         }, 1000);
       }
     }
 
-    function resetFlips() {
-      firstCard = null;
-      secondCard = null;
-      lockBoard = false;
+    function revealCard(card) {
+      card.textContent = card.dataset.value;
+      card.classList.add("flipped");
+      const idx = card.dataset.index;
+      memory[idx] = card.dataset.value;
+    }
+
+    function hideCard(card) {
+      card.textContent = "?";
+      card.classList.remove("flipped");
     }
 
     function updateHighScore() {
-      const key = `highscore_${currentCardCount}`;
-      const savedScore = localStorage.getItem(key);
-      const scoreElement = document.getElementById("highScore");
+      const high = localStorage.getItem("highScore");
+      document.getElementById("highScore").textContent = high || "-";
+    }
 
-      if (matchCount === totalPairs) {
-        if (!savedScore || flipCount < parseInt(savedScore)) {
-          localStorage.setItem(key, flipCount);
-          scoreElement.textContent = `🏆 ハイスコア更新！: ${flipCount} 回`;
-        } else {
-          scoreElement.textContent = `🏆 ハイスコア: ${savedScore} 回`;
-        }
-      } else {
-        scoreElement.textContent = savedScore
-          ? `🏆 ハイスコア: ${savedScore} 回`
-          : `🏆 ハイスコア未登録`;
+    function endGame() {
+      document.getElementById("status").textContent = `ゲームクリア！回数: ${flipCount}`;
+      const high = parseInt(localStorage.getItem("highScore") || "9999");
+      if (flipCount < high) {
+        localStorage.setItem("highScore", flipCount);
+        updateHighScore();
       }
+    }
+
+    function nextBotTurn() {
+      isBotTurn = true;
+      document.getElementById("status").textContent = "ボットの番です...";
+      setTimeout(botPlay, 1000);
+    }
+
+    function botPlay() {
+      const cards = Array.from(document.querySelectorAll(".card"));
+      const hidden = cards.filter(c => !c.classList.contains("flipped"));
+      if (hidden.length < 2) return;
+
+      let pick1, pick2;
+
+      if (botLevel === "hard") {
+        for (let i = 0; i < hidden.length; i++) {
+          for (let j = i + 1; j < hidden.length; j++) {
+            if (hidden[i].dataset.value === hidden[j].dataset.value) {
+              pick1 = hidden[i];
+              pick2 = hidden[j];
+              break;
+            }
+          }
+        }
+      }
+
+      if (!pick1 || !pick2) {
+        pick1 = hidden[Math.floor(Math.random() * hidden.length)];
+        do {
+          pick2 = hidden[Math.floor(Math.random() * hidden.length)];
+        } while (pick1 === pick2);
+      }
+
+      revealCard(pick1);
+      setTimeout(() => {
+        revealCard(pick2);
+        if (pick1.dataset.value === pick2.dataset.value) {
+          matchCount++;
+          if (matchCount === totalPairs) endGame();
+          isBotTurn = false;
+          document.getElementById("status").textContent = "あなたの番です";
+        } else {
+          setTimeout(() => {
+            hideCard(pick1);
+            hideCard(pick2);
+            isBotTurn = false;
+            document.getElementById("status").textContent = "あなたの番です";
+          }, 1000);
+        }
+      }, 800);
     }
   </script>
 </body>
