@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>いつでもどこでも神経衰弱！</title>
+<style>
+  /* --- Reset & 基本スタイル --- */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #8ec5fc 0%, #e0c3fc 100%);
+    color: #333;
+    user-select: none;
+  }
+  h1 {
+    text-align: center;
+    margin: 16px 0;
+    font-weight: 700;
+    color: #3a0ca3;
+  }
+  button {
+    cursor: pointer;
+    background-color: #720026;
+    background-image: linear-gradient(315deg, #720026 0%, #ea00d9 74%);
+    border: none;
+    color: white;
+    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(234,0,217,0.5);
+    transition: background-color 0.3s ease;
+    font-size: 1rem;
+  }
+  button:hover {
+    background-color: #ea00d9;
+    box-shadow: 0 6px 12px rgba(234,0,217,0.7);
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* --- メインコンテナ --- */
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px 32px;
+  }
+
+  /* --- メニュー --- */
+  #menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  /* --- ゲーム盤面 --- */
+  #gameBoard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+    touch-action: manipulation;
+  }
+
+  /* --- カード --- */
+  .card {
+    position: relative;
+    width: 100%;
+    padding-top: 125%; /* 4:5の縦横比 */
+    perspective: 600px;
+    border-radius: 12px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  }
+  .card-inner {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    transition: transform 0.5s;
+    transform-style: preserve-3d;
+    cursor: pointer;
+  }
+  .card.flipped .card-inner {
+    transform: rotateY(180deg);
+    cursor: default;
+  }
+
+  .card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    user-select: none;
+  }
+
+  .card-front {
+    background: white;
+    color: #720026;
+    box-shadow: inset 0 0 15px #ea00d9;
+    transform: rotateY(180deg);
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, #ea00d9 0%, #720026 100%);
+    color: white;
+  }
+
+  /* --- Bluetooth接続状態表示 --- */
+  #bluetoothStatus {
+    text-align: center;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #720026;
+  }
+
+  /* --- ログエリア --- */
+  #logArea {
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    background: #f3e5f5;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: inset 0 0 5px #ce93d8;
+  }
+</style>
+</head>
+<body>
+  <div id="app">
+    <h1>いつでもどこでも神経衰弱！</h1>
+
+    <div id="menu">
+      <button id="btnSinglePlay">一人で遊ぶ</button>
+      <button id="btnDailyChallenge">デイリーチャレンジ</button>
+      <button id="btnBluetoothPlay">フレンドと対戦(Bluetooth)</button>
+      <button id="btnExportData">データをエクスポート</button>
+      <button id="btnImportData">データをインポート</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" />
+    </div>
+
+    <div id="bluetoothStatus"></div>
+
+    <div id="gameBoard"></div>
+
+    <div id="logArea"></div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
