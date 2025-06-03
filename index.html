@@ -1,162 +1,211 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-<title>いつでもどこでも神経衰弱！</title>
-<style>
-  /* --- Reset & 基本スタイル --- */
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    margin: 0; padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #8ec5fc 0%, #e0c3fc 100%);
-    color: #333;
-    user-select: none;
-  }
-  h1 {
-    text-align: center;
-    margin: 16px 0;
-    font-weight: 700;
-    color: #3a0ca3;
-  }
-  button {
-    cursor: pointer;
-    background-color: #720026;
-    background-image: linear-gradient(315deg, #720026 0%, #ea00d9 74%);
-    border: none;
-    color: white;
-    font-weight: 700;
-    padding: 12px 24px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(234,0,217,0.5);
-    transition: background-color 0.3s ease;
-    font-size: 1rem;
-  }
-  button:hover {
-    background-color: #ea00d9;
-    box-shadow: 0 6px 12px rgba(234,0,217,0.7);
-  }
-  button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* --- メインコンテナ --- */
-  #app {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 0 16px 32px;
-  }
-
-  /* --- メニュー --- */
-  #menu {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-
-  /* --- ゲーム盤面 --- */
-  #gameBoard {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 24px;
-    touch-action: manipulation;
-  }
-
-  /* --- カード --- */
-  .card {
-    position: relative;
-    width: 100%;
-    padding-top: 125%; /* 4:5の縦横比 */
-    perspective: 600px;
-    border-radius: 12px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-  }
-  .card-inner {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    transition: transform 0.5s;
-    transform-style: preserve-3d;
-    cursor: pointer;
-  }
-  .card.flipped .card-inner {
-    transform: rotateY(180deg);
-    cursor: default;
-  }
-
-  .card-front, .card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    backface-visibility: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    user-select: none;
-  }
-
-  .card-front {
-    background: white;
-    color: #720026;
-    box-shadow: inset 0 0 15px #ea00d9;
-    transform: rotateY(180deg);
-  }
-
-  .card-back {
-    background: linear-gradient(135deg, #ea00d9 0%, #720026 100%);
-    color: white;
-  }
-
-  /* --- Bluetooth接続状態表示 --- */
-  #bluetoothStatus {
-    text-align: center;
-    margin-bottom: 12px;
-    font-weight: 600;
-    color: #720026;
-  }
-
-  /* --- ログエリア --- */
-  #logArea {
-    max-height: 120px;
-    overflow-y: auto;
-    font-size: 0.85rem;
-    background: #f3e5f5;
-    border-radius: 8px;
-    padding: 8px;
-    box-shadow: inset 0 0 5px #ce93d8;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>神経衰弱ゲーム</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    select, input[type="number"], button {
+      font-size: 16px;
+      margin: 5px;
+      padding: 5px 10px;
+    }
+    #gameBoard {
+      display: grid;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+      perspective: 1000px;
+    }
+    .card {
+      width: 80px;
+      height: 100px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+      cursor: pointer;
+    }
+    .cardInner {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 8px;
+      font-size: 32px;
+    }
+    .front {
+      background: #4caf50;
+      color: white;
+    }
+    .back {
+      background: #fff;
+      color: #333;
+      transform: rotateY(180deg);
+      border: 2px solid #4caf50;
+    }
+    .flipped {
+      transform: rotateY(180deg);
+      cursor: default;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    #highScore {
+      margin-top: 10px;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
-  <div id="app">
-    <h1>いつでもどこでも神経衰弱！</h1>
+  <h1>神経衰弱ゲーム</h1>
 
-    <div id="menu">
-      <button id="startGame">一人で遊ぶ</button>
-      <button id="btnDailyChallenge">デイリーチャレンジ</button>
-      <button id="btnBluetoothPlay">フレンドと対戦(Bluetooth)</button>
-      <button id="btnExportData">データをエクスポート</button>
-      <button id="btnImportData">データをインポート</button>
-      <input type="file" id="importFile" accept=".json" style="display:none" />
-    </div>
+  <label>カード枚数（偶数）:
+    <select id="cardCountSelect">
+      <option value="8">8枚</option>
+      <option value="16">16枚</option>
+      <option value="24">24枚</option>
+      <option value="32">32枚</option>
+      <option value="40">40枚</option>
+      <option value="60">60枚</option>
+    </select>
+  </label>
+  <label>カスタム:
+    <input type="number" id="customCount" min="2" max="60" step="2" placeholder="偶数(最大60)" />
+  </label>
+  <button onclick="startGame()">ゲーム開始</button>
 
-    <div id="bluetoothStatus"></div>
+  <div id="gameBoard"></div>
+  <div id="status"></div>
+  <div id="highScore"></div>
 
-    <div id="gameBoard"></div>
+  <script>
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let matchCount = 0;
+    let totalPairs = 0;
+    let flipCount = 0;
+    let currentCardCount = 0;
 
-    <div id="logArea"></div>
-  </div>
+    function startGame() {
+      const select = document.getElementById("cardCountSelect");
+      const custom = document.getElementById("customCount").value;
+      const count = parseInt(custom) || parseInt(select.value);
 
-  <script src="main.js"></script>
+      if (count % 2 !== 0 || count < 2 || count > 60) {
+        alert("2〜60までの偶数を入力してください");
+        return;
+      }
+
+      currentCardCount = count;
+      const board = document.getElementById("gameBoard");
+      board.innerHTML = "";
+      firstCard = secondCard = null;
+      lockBoard = false;
+      matchCount = 0;
+      flipCount = 0;
+      totalPairs = count / 2;
+
+      const columns = Math.min(10, Math.ceil(Math.sqrt(count)));
+      board.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+      const values = [];
+      for (let i = 1; i <= totalPairs; i++) {
+        values.push(i, i);
+      }
+      values.sort(() => 0.5 - Math.random());
+
+      values.forEach(num => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "card";
+        wrapper.dataset.value = num;
+
+        const front = document.createElement("div");
+        front.className = "cardInner front";
+        front.textContent = "?";
+
+        const back = document.createElement("div");
+        back.className = "cardInner back";
+        back.textContent = num;
+
+        wrapper.appendChild(front);
+        wrapper.appendChild(back);
+
+        wrapper.addEventListener("click", () => flipCard(wrapper));
+        board.appendChild(wrapper);
+      });
+
+      document.getElementById("status").textContent = "ゲーム開始！";
+      updateHighScore();
+    }
+
+    function flipCard(card) {
+      if (lockBoard || card.classList.contains("flipped")) return;
+
+      card.classList.add("flipped");
+
+      if (!firstCard) {
+        firstCard = card;
+        return;
+      }
+
+      secondCard = card;
+      lockBoard = true;
+      flipCount++;
+
+      if (firstCard.dataset.value === secondCard.dataset.value) {
+        matchCount++;
+        resetFlips();
+        if (matchCount === totalPairs) {
+          document.getElementById("status").textContent = `🎉 クリア！試行回数：${flipCount}`;
+          updateHighScore();
+        }
+      } else {
+        setTimeout(() => {
+          firstCard.classList.remove("flipped");
+          secondCard.classList.remove("flipped");
+          resetFlips();
+        }, 1000);
+      }
+    }
+
+    function resetFlips() {
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+    }
+
+    function updateHighScore() {
+      const key = `highscore_${currentCardCount}`;
+      const savedScore = localStorage.getItem(key);
+      const scoreElement = document.getElementById("highScore");
+
+      if (matchCount === totalPairs) {
+        if (!savedScore || flipCount < parseInt(savedScore)) {
+          localStorage.setItem(key, flipCount);
+          scoreElement.textContent = `🏆 ハイスコア更新！: ${flipCount} 回`;
+        } else {
+          scoreElement.textContent = `🏆 ハイスコア: ${savedScore} 回`;
+        }
+      } else {
+        scoreElement.textContent = savedScore
+          ? `🏆 ハイスコア: ${savedScore} 回`
+          : `🏆 ハイスコア未登録`;
+      }
+    }
+  </script>
 </body>
 </html>
-
